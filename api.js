@@ -18,7 +18,9 @@ const Hapi = require('hapi'),//Gerencia Rotas
 
 
 	//Servidor heroku
-	app = Hapi.server({ port: process.env.PORT || 7000
+	app = Hapi.server({ 
+		host: process.env.HOST || 'localhost',
+		port: process.env.PORT || 7000
 		//password: '4b627d7ef97f1b749d9550c1784efe89cfde74ef400896cef1e32246d303d6e0',
 		//database: 'd1d3k9hpa9flob'
 	});
