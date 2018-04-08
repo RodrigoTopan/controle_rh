@@ -27,7 +27,8 @@ class Database {
 	}
 
 	async conectar(){
-		const conn = 'postgres://xrdhmzfpykndka:4b627d7ef97f1b749d9550c1784efe89cfde74ef400896cef1e32246d303d6e0@ec2-54-221-192-231.compute-1.amazonaws.com:5432/d1d3k9hpa9flob';
+		//const conn = 'postgres://xrdhmzfpykndka:4b627d7ef97f1b749d9550c1784efe89cfde74ef400896cef1e32246d303d6e0@ec2-54-221-192-231.compute-1.amazonaws.com:5432/d1d3k9hpa9flob';
+		const conn = process.env.DATABASE_URL;
 		try{
 			this.sequelize = new Sequelize(
 		            conn,
