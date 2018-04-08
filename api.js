@@ -1,3 +1,11 @@
+/*
+consultar https://www.twilio.com/blog/2017/08/working-with-environment-variables-in-node-js.html para entender variáveis de ambiente
+npm install dotenv --save	
+*/
+/*if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').load();
+}*/
+
 //const Database = require();*/
 //Definindo constantes
 const Hapi = require('hapi'),//Gerencia Rotas
@@ -18,12 +26,9 @@ const Hapi = require('hapi'),//Gerencia Rotas
 
 
 	//Servidor heroku
-	app = Hapi.server({ 
-		host: process.env.HOST || 'localhost',
-		port: process.env.PORT || 7000
-		//password: '4b627d7ef97f1b749d9550c1784efe89cfde74ef400896cef1e32246d303d6e0',
-		//database: 'd1d3k9hpa9flob'
-	});
+	//Estabelencendo conexão com servidor e definindo a porta
+	app = Hapi.server({port: process.env.PORT});
+	//app.connection() não é uma função mais do HAPI
 
 
 const Rotas = async () => {//Utilização de arrow functions
