@@ -6,13 +6,26 @@ const Hapi = require('hapi'),//Gerencia Rotas
 	HapiSwagger = require('hapi-swagger'),//HapiSwagger para a documentação
 	Inert = require('Inert'),//Plugin que provê páginas estáticas. Nesse projeto serve para ver a documentação
 	Vision = require('vision'),//Plugin que suporta templates de páginas
+	Database = require('./Database'),//Instância de Banco de dados
+    BD = new Database(),
 	// Criando servidor
-	app = Hapi.server({
+	
+	//Servidor local
+	/*app = Hapi.server({
 		host: 'localhost',
 		port: 7000
+	});*/
+
+
+	//Servidor heroku
+	app = Hapi.server({ port: process.env.PORT || 7000
+		//password: '4b627d7ef97f1b749d9550c1784efe89cfde74ef400896cef1e32246d303d6e0',
+		//database: 'd1d3k9hpa9flob'
 	});
 
+
 const Rotas = async () => {//Utilização de arrow functions
+	BD.conectar(); // estabelecimento de conexão
 	//Página Inicial
 	/*app.route({
 				method:'GET',
@@ -28,11 +41,11 @@ const Rotas = async () => {//Utilização de arrow functions
                             authorization: Joi.string().required()
                         }).unknown()
 					},
-					handler: async (req, res) =>
+					handler: async (req, reply) =>
 						{
 							try{
 								//req.logger.info('In handle %s', req.path);
-								//return res.file('./public/index.html');
+								//return reply.file('./public/index.html');
 								return reply('Swagger na área');
 							}
 							catch(e){
@@ -70,7 +83,7 @@ const Rotas = async () => {//Utilização de arrow functions
 						.description('Senha do usuário'),
 				}
 			},
-			handler: async (req, res) => {
+			handler: async (req, reply) => {
 				try {
 
 				} catch (e) {
@@ -89,17 +102,21 @@ const Rotas = async () => {//Utilização de arrow functions
 				method: 'GET',
 				path: '/usuarios',
 				config: {
-					description: 'Rota para listar todo os usuários',
+					description: 'Rota para listar todos os usuários',
 					notes: 'Retorna todos os usuários cadastrados',
 					tags: ['api'],
 					validate: {
 						headers: Joi.object({
 							authorization: Joi.string().required()
-						})
+						}).unknown()
 					},
-					handler: async (req, res) => {
+					handler: async (req, reply) => {
 						try {
-							return reply('Lista de usuários');
+							const usuarios = BD.pesquisarUsuarios();
+								console.log(usuarios);
+							return usuarios;//reply de resposta
+							//O hapi.js não utiliza mais reply para returnar a resposta 
+							//https://stackoverflow.com/questions/47486666/typeerror-reply-is-not-a-function?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 						} catch (e) {
 							console.log('Erro ao listar usuário' + e);
 							return reply('Ocorreu um erro no processo');
@@ -118,14 +135,20 @@ const Rotas = async () => {//Utilização de arrow functions
 					validate: {
 						headers: Joi.object({
 							authorization: Joi.string().required()
-						}),
+						}).unknown(),
 						//Params são os valores recebidos pela url
 						params: {
 							id: Joi.number().required().description('O ID é um campo obrigatório')
 						}
 					},
-					handler: async (req, res) => {
-						return reply('Usuário encontrado');
+					handler: async (req, reply) => {
+						try{
+							const usuarioPesquisado = BD.pesquisarUsuario(req.params.id);  
+							console.log(usuarioPesquisado);
+							return usuarioPesquisado;
+						}catch(e){
+							return reply('Usuário não encontrado');
+						}
 					}
 				}
 			},
@@ -140,11 +163,8 @@ const Rotas = async () => {//Utilização de arrow functions
 					validate: {
 						headers: Joi.object({
 							authorization: Joi.string().required()
-						}),
+						}).unknown(),
 						payload: {
-							id: Joi.number()
-								.required()
-								.description('O ID do usuário é um campo obrigatório'),
 							username: Joi.string()
 								.alphanum()
 								.min(3)
@@ -159,9 +179,11 @@ const Rotas = async () => {//Utilização de arrow functions
 								.description('A senha é obrigatóia')
 						}
 					},
-					handler: async (req, res) => {
+					handler: async (req, reply) => {
 						try {
-							return reply('Usuário cadastrado');
+							//Passando os dados do corpo da requisição para o cadastro						
+							const cadastro = BD.cadastrarUsuario(req.payload);
+							return cadastro;
 						} catch (e) {
 							console.log('Erro ao cadastrar usuário' + e);
 							return reply('Erro no processo');
@@ -180,18 +202,18 @@ const Rotas = async () => {//Utilização de arrow functions
 					validate: {
 						headers: Joi.object({
 							authorization: Joi.string().required()
-						}),
-						params: {
-							id: Joi.number().required()
-						},
+						}).unknown(),
 						payload: {
+							id: Joi.number().required(),
 							username: Joi.string().min(3).max(50),
 							password: Joi.string().min(6).max(18)
 						}
 					},
-					handler: async (req, res) => {
+					handler: async (req, reply) => {
 						try {
-							return reply('Usuário Alterado');
+							const usuarioAlterado = BD.alterarUsuario(req.payload);
+							if(usuárioAlterado === 1)
+							return 'Usuário alterado com sucesso';
 						} catch (e) {
 							console.log('Erro ao alterar usuário' + e);
 							return reply('Ocorreu um erro no processo');
@@ -210,14 +232,16 @@ const Rotas = async () => {//Utilização de arrow functions
 					validate: {
 						headers: Joi.object({
 							authorization: Joi.string().required()
-						}),
+						}).unknown(),//Não esquecer o unknown para não dar bad request
 						params: {
-							id: Joi.number().required()
+							id: Joi.string().required()
 						}
 					},
-					handler: async (req, res) => {
+					handler: async (req, reply) => {
 						try {
-							return reply('Usuário deletado');
+							const usuarioRemovido = BD.removerUsuario(req.params.id);  
+							if(usuarioRemovido === 1)
+								return 'Usuário removido com sucesso';
 						} catch (e) {
 							console.log('Erro em remover usuário' + e);
 							return reply('Ocorreu um erro no processo');
@@ -227,39 +251,39 @@ const Rotas = async () => {//Utilização de arrow functions
 			}
 		]);
 
-	//Cadastrando Rotas de manipulação de Empresas
+	//Cadastrando Rotas de manipulação de Empreplyas
 	app.route(
 		[
-			//Listar todas as empresas cadastradas
+			//Listar todas as empreplyas cadastradas
 			{
 				method: 'GET',
-				path: '/empresas',
+				path: '/empreplyas',
 				config: {
-					description: 'Rota para listar todas as empresas',
-					notes: 'Esta rota retorna a lista de todas as empresas',
+					description: 'Rota para listar todas as empreplyas',
+					notes: 'Esta rota retorna a lista de todas as empreplyas',
 					tags: ['api'],
 					validate: {
 						headers: Joi.object({
 							authorization: Joi.string().required()
 						})
 					},
-					handler: async (req, res) => {
+					handler: async (req, reply) => {
 						try {
-							return reply('Lista de empresas');
+							return reply('Lista de empreplyas');
 						} catch (e) {
-							console.log('Erro em listar empresas' + e);
+							console.log('Erro em listar empreplyas' + e);
 							return reply('Ocorreu um erro no processo');
 						}
 					}
 				}
 			},
-			//Pesquisar empresa específica por ID
+			//Pesquisar empreplya específica por ID
 			{
 				method: 'GET',
-				path: '/empresas/{id}',
+				path: '/empreplyas/{id}',
 				config: {
-					description: 'Rota para pesquisar uma empresa específica por ID',
-					notes: 'Retorna os dados do registro de uma empresa',
+					description: 'Rota para pesquisar uma empreplya específica por ID',
+					notes: 'Retorna os dados do registro de uma empreplya',
 					tags: ['api'],
 					validate: {
 						headers: Joi.object({
@@ -269,23 +293,23 @@ const Rotas = async () => {//Utilização de arrow functions
 							id: Joi.number().required()
 						}
 					},
-					handler: async (req, res) => {
+					handler: async (req, reply) => {
 						try {
-							return reply('Empresa nº' + req.params.id + 'pesquisada com sucesso');
+							return reply('Empreplya nº' + req.params.id + 'pesquisada com sucesso');
 						} catch (e) {
-							console.log('Erro em pesquisar empresa' + e);
+							console.log('Erro em pesquisar empreplya' + e);
 							return reply('Ocorreu um erro no processo');
 						}
 					}
 				}
 			},
-			//Cadastrar empresa
+			//Cadastrar empreplya
 			{
 				method: 'POST',
-				path: '/empresas',
+				path: '/empreplyas',
 				config: {
-					description: 'Rota para cadastrar empresa',
-					notes: 'Realiza o cadastro de uma empresa',
+					description: 'Rota para cadastrar empreplya',
+					notes: 'Realiza o cadastro de uma empreplya',
 					tags: ['api'],
 					validate: {
 						headers: Joi.object({
@@ -297,24 +321,24 @@ const Rotas = async () => {//Utilização de arrow functions
 							cnpj: Joi.string().min(12).max(12).required()
 						}
 					},
-					handler: async (req, res) => {
+					handler: async (req, reply) => {
 						try {
-							return reply('Empresa cadastrada com sucesso');
+							return reply('Empreplya cadastrada com sucesso');
 						} catch (e) {
-							console.log('Erro em cadastrar empresa' + e);
+							console.log('Erro em cadastrar empreplya' + e);
 							return reply('Ocorreu um erro no processo');
 						}
 					}
 				}
 			},
-			//Alterar empresa específica por ID
+			//Alterar empreplya específica por ID
 			{
 				method: 'PUT',
-				path: '/empresas/{id}',
+				path: '/empreplyas/{id}',
 				config:
 					{
-						description: 'Rota para alterar registro de uma empresa',
-						notes: 'Realiza alteração no registro da empresa pesquisada por ID',
+						description: 'Rota para alterar registro de uma empreplya',
+						notes: 'Realiza alteração no registro da empreplya pesquisada por ID',
 						tags: ['api'],
 						validate: {
 							headers: Joi.object({
@@ -328,25 +352,25 @@ const Rotas = async () => {//Utilização de arrow functions
 								cnpj: Joi.string().alphanum().min(12).max(12)
 							}
 						},
-						handler: async (req, res) => {
+						handler: async (req, reply) => {
 							try {
-								return reply('Empresa nº' + req.params.id + 'alterada com sucesso');
+								return reply('Empreplya nº' + req.params.id + 'alterada com sucesso');
 							}
 							catch (e) {
-								console.log('Erro em alterar empresa' + e);
+								console.log('Erro em alterar empreplya' + e);
 								return reply('Ocorreu um erro no processo');
 							}
 						}
 					}
 			},
-			//Remover empresa específica por ID
+			//Remover empreplya específica por ID
 			{
 				method: 'DELETE',
-				path: '/empresas/{id}',
+				path: '/empreplyas/{id}',
 				config:
 					{
-						description: 'Remover empresa específica por ID',
-						notes: 'Remover empresa específica por ID',
+						description: 'Remover empreplya específica por ID',
+						notes: 'Remover empreplya específica por ID',
 						tags: ['api'],
 						validate:
 							{
@@ -359,11 +383,11 @@ const Rotas = async () => {//Utilização de arrow functions
 										id: Joi.number().required()
 									},
 							},
-						handler: async (req, res) => {
+						handler: async (req, reply) => {
 							try {
-								return reply('Empresa nº' + req.params.id + 'alterada');
+								return reply('Empreplya nº' + req.params.id + 'alterada');
 							} catch (e) {
-								console.log('Erro em remover empresa' + e);
+								console.log('Erro em remover empreplya' + e);
 								return reply('Ocorreu um erro no processo');
 							}
 						}
@@ -384,7 +408,7 @@ const Rotas = async () => {//Utilização de arrow functions
 						authorization: Joi.string().required()
 					}).unknown()//Você deve colocar o unknown para que o app aceite um valor desconhecido e retorne algum valor
 				},
-				handler: async (req, res) => {
+				handler: async (req, reply) => {
 					try {
 						return 'Funcionários';
 					} catch (e) {
@@ -398,18 +422,18 @@ const Rotas = async () => {//Utilização de arrow functions
 	app.route([
 		{
 			method: 'GET',
-			path: '/funcionarioEmpresa',
+			path: '/funcionarioEmpreplya',
 			config: {
-				description: 'Funcionários de Empresas',
-				notes: 'Lista os funcionários que trabalham em uma empresa',
+				description: 'Funcionários de Empreplyas',
+				notes: 'Lista os funcionários que trabalham em uma empreplya',
 				tags: ['api'],
 				validate: {
 					headers: Joi.object({
 						authorization: Joi.string().required()
 					})
 				},
-				handler: async (req, res) => {
-					return 'Funcionarios de empresas'
+				handler: async (req, reply) => {
+					return 'Funcionarios de empreplyas'
 				}
 			}
 		}
@@ -426,7 +450,7 @@ const init = async () => {
 			plugin: HapiPino,
 			options: {
 				prettyPrint: true,
-				logEvents:['response']
+				logEvents:['replyponse']
 			}
 		});*/
 		await app.register(
@@ -434,18 +458,18 @@ const init = async () => {
 				//Registrar todos os plugins juntos é muito mais bonito do que um por vez
 				Inert,//Registrando Inert
 				Vision,//Registrando Vision
-				{
+				{ //HAPI PINO PARA ALGUNS LOGS -> DEIXEI DESATIVADO
 					plugin: HapiPino,
 					options: {
 						prettyPrint: true,
-						logEvents: ['response']
+						logEvents: ['replyponse']
 					}
 				},
 				{
 					plugin: HapiSwagger,//Adicionando Hapi Swagger
 					options: { info: { title: 'De 0 a Herói', description: 'Dominando NODEJS', version: '1.0' } }
 				}
-			]).then(Rotas);//Resolvendo a promise gerada pelo HS. Só depois que essa promise for resolvida eu inicio o servidor
+			]).then(Rotas);//replyolvendo a promise gerada pelo HS. Só depois que essa promise for replyolvida eu inicio o servidor
 
 		await app.start();
 		console.log(`Servidor rodando na porta : ${app.info.port}`);
