@@ -119,7 +119,7 @@ const Rotas = async () => {//Utilização de arrow functions
 					},
 					handler: async (req, reply) => {
 						try {
-							const usuarios = await BD.pesquisarUsuarios();
+							const usuarios = BD.pesquisarUsuarios();
 								console.log(usuarios);
 							return usuarios;//reply de resposta
 							//O hapi.js não utiliza mais reply para returnar a resposta 
