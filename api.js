@@ -32,7 +32,7 @@ const Hapi = require('hapi'),//Gerencia Rotas
 
 
 const Rotas = async () => {//Utilização de arrow functions
-	BD.conectar(); // estabelecimento de conexão
+	await BD.conectar(); // estabelecimento de conexão
 	//Página Inicial
 	/*app.route({
 				method:'GET',
@@ -119,7 +119,7 @@ const Rotas = async () => {//Utilização de arrow functions
 					},
 					handler: async (req, reply) => {
 						try {
-							const usuarios = BD.pesquisarUsuarios();
+							const usuarios = await BD.pesquisarUsuarios();
 								console.log(usuarios);
 							return usuarios;//reply de resposta
 							//O hapi.js não utiliza mais reply para returnar a resposta 
