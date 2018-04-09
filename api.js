@@ -28,8 +28,8 @@ const Hapi = require('hapi'),//Gerencia Rotas
 	//Servidor heroku
 	//Estabelencendo conexão com servidor e definindo a porta
 	app = Hapi.server({ 
-		host:'crudzao.herokuapp.com',
-		port: process.env.PORT,
+		host: 'crudzao.herokuapp.com' || 'localhost',
+		port: process.env.PORT || 7000,
 		routes: { cors: true }
 	});
 	//app.connection() não é uma função mais do HAPI
