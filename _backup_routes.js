@@ -33,6 +33,73 @@ const Hapi = require('hapi'),//Gerencia Rotas
 
 const Rotas = async () => {//Utilização de arrow functions
 	await BD.conectar(); // estabelecimento de conexão
+	//Página Inicial
+	/*app.route({
+				method:'GET',
+				path: '/teste',
+				config:
+				{
+					description: 'Rota para a página inicial',
+					notes: 'Retorna a página inicial',
+					tags:['api'],//Adicionar esta tag para as rotas que quiser documentar
+					validate:
+					{
+                        headers: Joi.object({
+                            authorization: Joi.string().required()
+                        }).unknown()
+					},
+					handler: async (req, reply) =>
+						{
+							try{
+								//req.logger.info('In handle %s', req.path);
+								//return reply.file('./public/index.html');
+								return reply('Swagger na área');
+							}
+							catch(e){
+								console.log('Erro com página inicial' + e);
+								return reply('Ocorreu um erro no processo');
+							}
+						}
+				}//Com o validate o handler deve estar dentro do config
+			});*/
+
+	//Login do usuário
+	app.route({
+		method: 'POST',
+		path: '/login',
+		config: {
+			description: 'Rota para realização de login do usuário',
+			notes: 'Essa rota retorna um token de acesso',
+			tags: ['api'],
+			validate: {
+				headers: Joi.object({
+					authorization: Joi.string().required()
+				}),
+				payload: {
+					username: Joi.string()
+						.alphanum()
+						.min(3)
+						.max(50)
+						.required()
+						.description('Username do usuário'),
+					password: Joi.string()
+						.alphanum()
+						.min(6)
+						.max(18)
+						.required()
+						.description('Senha do usuário'),
+				}
+			},
+			handler: async (req, reply) => {
+				try {
+
+				} catch (e) {
+					console.log('Erro no login' + e);
+					return reply('Erro no processo');
+				}
+			}
+		}
+	});
 
 	// Cadastrando Rotas de manipulação de Usuários
 	app.route(
@@ -45,9 +112,14 @@ const Rotas = async () => {//Utilização de arrow functions
 					description: 'Rota para listar todos os usuários',
 					notes: 'Retorna todos os usuários cadastrados',
 					tags: ['api'],
+					validate: {
+						headers: Joi.object({
+							authorization: Joi.string().required()
+						}).unknown()
+					},
 					handler: async (req, reply) => {
 						try {
-							const usuarios = await BD.pesquisarUsuarios();
+							const usuarios = BD.pesquisarUsuarios();
 								console.log(usuarios);
 							return usuarios;//reply de resposta
 							//O hapi.js não utiliza mais reply para returnar a resposta 
@@ -185,6 +257,195 @@ const Rotas = async () => {//Utilização de arrow functions
 				}
 			}
 		]);
+
+	//Cadastrando Rotas de manipulação de Empreplyas
+	app.route(
+		[
+			//Listar todas as empreplyas cadastradas
+			{
+				method: 'GET',
+				path: '/empreplyas',
+				config: {
+					description: 'Rota para listar todas as empreplyas',
+					notes: 'Esta rota retorna a lista de todas as empreplyas',
+					tags: ['api'],
+					validate: {
+						headers: Joi.object({
+							authorization: Joi.string().required()
+						})
+					},
+					handler: async (req, reply) => {
+						try {
+							return reply('Lista de empreplyas');
+						} catch (e) {
+							console.log('Erro em listar empreplyas' + e);
+							return reply('Ocorreu um erro no processo');
+						}
+					}
+				}
+			},
+			//Pesquisar empreplya específica por ID
+			{
+				method: 'GET',
+				path: '/empreplyas/{id}',
+				config: {
+					description: 'Rota para pesquisar uma empreplya específica por ID',
+					notes: 'Retorna os dados do registro de uma empreplya',
+					tags: ['api'],
+					validate: {
+						headers: Joi.object({
+							authorization: Joi.string().required()
+						}),
+						params: {
+							id: Joi.number().required()
+						}
+					},
+					handler: async (req, reply) => {
+						try {
+							return reply('Empreplya nº' + req.params.id + 'pesquisada com sucesso');
+						} catch (e) {
+							console.log('Erro em pesquisar empreplya' + e);
+							return reply('Ocorreu um erro no processo');
+						}
+					}
+				}
+			},
+			//Cadastrar empreplya
+			{
+				method: 'POST',
+				path: '/empreplyas',
+				config: {
+					description: 'Rota para cadastrar empreplya',
+					notes: 'Realiza o cadastro de uma empreplya',
+					tags: ['api'],
+					validate: {
+						headers: Joi.object({
+							authorization: Joi.string().required()
+						}),
+						payload: {
+							id: Joi.number().required(),
+							nome: Joi.string().alphanum().min(3).max(50),
+							cnpj: Joi.string().min(12).max(12).required()
+						}
+					},
+					handler: async (req, reply) => {
+						try {
+							return reply('Empreplya cadastrada com sucesso');
+						} catch (e) {
+							console.log('Erro em cadastrar empreplya' + e);
+							return reply('Ocorreu um erro no processo');
+						}
+					}
+				}
+			},
+			//Alterar empreplya específica por ID
+			{
+				method: 'PUT',
+				path: '/empreplyas/{id}',
+				config:
+					{
+						description: 'Rota para alterar registro de uma empreplya',
+						notes: 'Realiza alteração no registro da empreplya pesquisada por ID',
+						tags: ['api'],
+						validate: {
+							headers: Joi.object({
+								authorization: Joi.string().required()
+							}),
+							params: {
+								id: Joi.number().required()
+							},
+							payload: {
+								nome: Joi.string().alphanum().min(3).max(50),
+								cnpj: Joi.string().alphanum().min(12).max(12)
+							}
+						},
+						handler: async (req, reply) => {
+							try {
+								return reply('Empreplya nº' + req.params.id + 'alterada com sucesso');
+							}
+							catch (e) {
+								console.log('Erro em alterar empreplya' + e);
+								return reply('Ocorreu um erro no processo');
+							}
+						}
+					}
+			},
+			//Remover empreplya específica por ID
+			{
+				method: 'DELETE',
+				path: '/empreplyas/{id}',
+				config:
+					{
+						description: 'Remover empreplya específica por ID',
+						notes: 'Remover empreplya específica por ID',
+						tags: ['api'],
+						validate:
+							{
+								headers: Joi.object(
+									{
+										authorization: Joi.string().required()
+									}),
+								params:
+									{
+										id: Joi.number().required()
+									},
+							},
+						handler: async (req, reply) => {
+							try {
+								return reply('Empreplya nº' + req.params.id + 'alterada');
+							} catch (e) {
+								console.log('Erro em remover empreplya' + e);
+								return reply('Ocorreu um erro no processo');
+							}
+						}
+					}
+			}
+		]);
+
+	app.route([
+		{
+			method: 'GET',
+			path: '/funcionarios',
+			config: {
+				description: 'Lista todos os funcionários',
+				notes: 'Retorna todos os registros de funcionários',
+				tags: ['api'],
+				validate: {
+					headers: Joi.object({
+						authorization: Joi.string().required()
+					}).unknown()//Você deve colocar o unknown para que o app aceite um valor desconhecido e retorne algum valor
+				},
+				handler: async (req, reply) => {
+					try {
+						return 'Funcionários';
+					} catch (e) {
+						return ('Erro' + e);
+					}
+				}
+			}
+		}
+	]);
+
+	app.route([
+		{
+			method: 'GET',
+			path: '/funcionarioEmpreplya',
+			config: {
+				description: 'Funcionários de Empreplyas',
+				notes: 'Lista os funcionários que trabalham em uma empreplya',
+				tags: ['api'],
+				validate: {
+					headers: Joi.object({
+						authorization: Joi.string().required()
+					})
+				},
+				handler: async (req, reply) => {
+					return 'Funcionarios de empreplyas'
+				}
+			}
+		}
+	]);
+
 };
 
 //Função que inicia servidor
