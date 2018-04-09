@@ -28,7 +28,6 @@ const Hapi = require('hapi'),//Gerencia Rotas
 	//Servidor heroku
 	//Estabelencendo conexão com servidor e definindo a porta
 	app = Hapi.server({
-		host: 'localhost',
 		port: process.env.PORT
 	});
 
