@@ -19,18 +19,18 @@ const Hapi = require('hapi'),//Gerencia Rotas
 	// Criando servidor
 	
 	//Servidor local
-	app = Hapi.server({
+	/*app = Hapi.server({
 		host: 'localhost',
 		port: 7000
-	});
+	});*/
 
 
 	//Servidor heroku
 	//Estabelencendo conexão com servidor e definindo a porta
-	/*app = Hapi.server({
+	app = Hapi.server({
 		host: 'localhost',
 		port: process.env.PORT
-	});*/
+	});
 
 	//app.connection() não é uma função mais do HAPI
 
